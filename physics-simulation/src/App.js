@@ -12,6 +12,9 @@ function App() {
     // Canvas 엘리먼트 가져오기
     const canvas = canvasRef.current;
 
+    // 물체의 현재 속도를 저장할 변수 추가
+    let currentVelocity = { x: 0, y: 0 };
+
     // 바디 생성 (원으로 변경)
     const circle = Matter.Bodies.circle(400, 200, 40, {
       restitution: 0.8, // 튕김 계수
@@ -64,12 +67,11 @@ function App() {
       const pairs = event.pairs;
 
       pairs.forEach((pair) => {
-        // 충돌한 두 개체 중 하나가 원이면서 다른 하나가 벽이면
+        // 충돌할 때 현재 속도를 반대 방향으로 반전
         if (pair.bodyA === circle && pair.bodyB === wall) {
-          // 튕기도록 속도를 조절합니다.
-          Matter.Body.setVelocity(circle, { x: -5, y: -5 });
+          currentVelocity = { x: -currentVelocity.x, y: -currentVelocity.y };
         } else if (pair.bodyA === wall && pair.bodyB === circle) {
-          Matter.Body.setVelocity(circle, { x: 5, y: -5 });
+          currentVelocity = { x: -currentVelocity.x, y: -currentVelocity.y };
         }
       });
     });
@@ -79,19 +81,19 @@ function App() {
       const pairs = event.pairs;
 
       pairs.forEach((pair) => {
-        // 충돌 중인 두 개체 중 하나가 원이면서 다른 하나가 벽이면
+        // 속도를 현재 속도로 설정하여 관성의 법칙을 적용
         if (pair.bodyA === circle && pair.bodyB === wall) {
-          // 속도를 0으로 설정하여 멈추도록 합니다.
-          Matter.Body.setVelocity(circle, { x: 0, y: 0 });
+          Matter.Body.setVelocity(circle, currentVelocity);
         } else if (pair.bodyA === wall && pair.bodyB === circle) {
-          Matter.Body.setVelocity(circle, { x: 0, y: 0 });
+          Matter.Body.setVelocity(circle, currentVelocity);
         }
       });
     });
 
     // 엔진 업데이트 함수 추가
     Matter.Events.on(engine, 'afterUpdate', () => {
-      // 여기에 물리 동작을 업데이트하는 코드를 추가할 수 있습니다.
+      // 물체의 현재 속도를 업데이트
+      currentVelocity = circle.velocity;
     });
 
     // 렌더러 업데이트
