@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matter.js 물리 시뮬레이션 예제</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.17.1/matter.js"></script>
+    <style>
+        #angleInput {
+            margin-top: 10px;
+        }
+
+        #myModal {
+            visibility: hidden;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1;
+        }
+
+        #myModalOverlay {
+            visibility: hidden;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 0;
+        }
+
+        #myModal label {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        #myModal button {
+            padding: 10px;
+            background-color: #4caf50;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<canvas id="myCanvas" width="800" height="600"></canvas>
+<label for="forceInput">힘의 크기 조절:</label>
+<input type="range" id="forceInput" min="0" max="0.1" step="0.01" value="0.01">
+<label for="angleInput">힘의 방향 (각도):</label>
+<input type="number" id="angleInput" min="0" max="360" step="1" value="0">
+<button onclick="applyForce()">적용</button>
+
+<div id="myModal">
+    <label for="directionInput">진행 방향 (각도):</label>
+    <input type="number" id="directionInput" min="0" max="360" step="1" value="0">
+    <label for="forceInputModal">힘의 크기 조절:</label>
+    <input type="range" id="forceInputModal" min="0" max="0.1" step="0.01" value="0.01">
+    <label for="weightInput">무게:</label>
+    <input type="number" id="weightInput" min="1" max="100" step="1" value="10">
+    <button onclick="updateObjectProperties()">적용</button>
+</div>
+
+<div id="myModalOverlay"></div>
+
+<script>
+    // Matter.js 엔진을 초기화합니다.
+    const engine = Matter.Engine.create();
+    const world = engine.world;
+
+    // 캔버스와 엔진을 연결합니다.
+    const canvas = document.getElementById('myCanvas');
+    const render = Matter.Render.create({
+        element: document.body,
+        canvas: canvas,
+        engine: engine,
+        options: {
+            width: 800,
+            height: 600,
+        }
+    });
+
+    // 바닥을 생성합니다.
+    const ground = Matter.Bodies.rectangle(400, 600, 800, 40, { isStatic: true });
+
+    // 왼쪽 벽을 생성합니다.
+    const leftWall = Matter.Bodies.rectangle(0, 300, 20, 600, { isStatic: true });
+
+    // 오른쪽 벽을 생성합니다.
+    const rightWall = Matter.Bodies.rectangle(800, 300, 20, 600, { isStatic: true });
+
+    // 물체를 생성합니다.
+    const circle = Matter.Bodies.circle(400, 200, 40);
+
+    // 마우스 제약 조건을 생성합니다.
+    const mouseConstraint = Matter.MouseConstraint.create(engine, {
+        mouse: Matter.Mouse.create(render.canvas),
+    });
+
+    // 물체를 월드에 추가합니다.
+    Matter.World.add(world, [ground, leftWall, rightWall, circle, mouseConstraint]);
+
+    // 애니메이션 루프를 설정합니다.
+    Matter.Engine.run(engine);
+    Matter.Render.run(render);
+
+    // 물체의 속성을 수정할 때 사용할 변수
+    let selectedObject = null;
+
+    // 힘을 적용하는 함수를 정의합니다.
+    function applyForce() {
+        const forceMagnitude = parseFloat(document.getElementById('forceInput').value);
+        const angle = parseFloat(document.getElementById('angleInput').value);
+        const force = Matter.Vector.create(forceMagnitude * Math.cos(angle), forceMagnitude * Math.sin(angle));
+        Matter.Body.applyForce(circle, circle.position, force);
+    }
+
+    // 'f' 키를 눌렀을 때 모달 창을 열도록 합니다.
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'f') {
+            selectedObject = circle;
+            updateModalInputs();
+            document.getElementById('myModal').style.visibility = 'visible';
+            document.getElementById('myModalOverlay').style.visibility = 'visible';
+        }
+    });
+
+    // 모달 창의 입력 필드를 업데이트합니다.
+    function updateModalInputs() {
+        const velocity = selectedObject.velocity || { x: 0, y: 0 };
+        document.getElementById('directionInput').value = Matter.Vector.angle(velocity);
+        document.getElementById('forceInputModal').value = Matter.Vector.magnitude(selectedObject.force) / selectedObject.mass;
+        document.getElementById('weightInput').value = selectedObject.mass;
+    }
+
+
+    // 모달 창에서 입력된 값을 기반으로 물체의 속성을 업데이트합니다.
+    function updateObjectProperties() {
+        const direction = parseFloat(document.getElementById('directionInput').value);
+        const forceMagnitude = parseFloat(document.getElementById('forceInputModal').value);
+        const weight = parseFloat(document.getElementById('weightInput').value);
+
+        // 물체의 속성을 업데이트합니다.
+        Matter.Body.setAngle(selectedObject, direction);
+        Matter.Body.setMass(selectedObject, weight);
+
+        // 새로운 힘 벡터를 계산하여 적용합니다.
+        const force = Matter.Vector.create(forceMagnitude * Math.cos(direction), forceMagnitude * Math.sin(direction));
+        Matter.Body.applyForce(selectedObject, selectedObject.position, force);
+
+        // 모달 창을 닫습니다.
+        document.getElementById('myModal').style.visibility = 'hidden';
+        document.getElementById('myModalOverlay').style.visibility = 'hidden';
+    }
+</script>
+</body>
+</html>
