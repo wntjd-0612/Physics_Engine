@@ -220,7 +220,7 @@
                         </select>
                     </div>
                     <div>
-                        <button style="background-color: #e62c1e; width: 50%;" onclick="">삭제</button>
+                        <button style="background-color: #e62c1e; width: 50%;" onclick="deleteObject()">삭제</button>
                         <button style="background-color: #979797; width: 50%;" onclick="objectSetting()">설정</button>
                     </div>
                     <button onclick="checkSelectedObject()" style="margin-top: 5px; width: 100%; height: 70px; background-color: #fff; color: #4caf50; border: 1px solid #4caf50;">선택된 요소 움직이기 ‣</button>
@@ -401,16 +401,16 @@
 
 
         // 힘을 적용하는 함수를 정의합니다.
+        // 힘을 적용하는 함수를 정의합니다.
         function applyForce() {
             const forceMagnitude = parseFloat(document.getElementById('forceInputModal').value);
             const angle = parseFloat(document.getElementById('directionInput').value);
             // 각도를 라디안으로 변환합니다.
-            const angleInRadians = Matter.Common.degreesToRadians(angle);
+            const angleInRadians = (angle * Math.PI) / 180;
             const force = Matter.Vector.create(forceMagnitude * Math.cos(angleInRadians), forceMagnitude * Math.sin(angleInRadians));
             Matter.Body.applyForce(selectedObject, selectedObject.position, force);
             console.log("힘 적용 완료");
         }
-
 
         // 모달 창의 입력 필드를 업데이트합니다.
         function updateModalInputs() {
@@ -470,6 +470,38 @@
             // 모달 창을 닫습니다.
             document.getElementById('windowModal').style.visibility = 'hidden';
             document.getElementById('myModalOverlay').style.visibility = 'hidden';
+        } function deleteObject() {
+            if (selectedObject != null) {
+                // 선택된 요소를 배열에서 제거합니다.
+                const index = items.indexOf(selectedObject);
+                if (index !== -1) {
+                    items.splice(index, 1);
+                }
+
+                // 선택된 요소를 월드에서 제거합니다.
+                Matter.World.remove(world, selectedObject);
+
+                // 선택된 요소를 해제합니다.
+                selectedObject = null;
+
+                // 선택된 요소 목록을 갱신합니다.
+                updateObjectList();
+            }
+        }
+
+        // 선택된 요소 목록을 갱신하는 함수
+        function updateObjectList() {
+            let select_object_id = document.getElementById("objectSetting_ID");
+            // 모든 옵션 제거
+            select_object_id.innerHTML = "";
+
+            // 새로운 옵션 추가
+            items.forEach((item, index) => {
+                let newOption = document.createElement('option');
+                newOption.innerHTML = "id: " + item.id;
+                newOption.value = item.id;
+                select_object_id.append(newOption);
+            });
         }
 
     </script>
