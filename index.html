@@ -1,161 +1,481 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Matter.js 물리 시뮬레이션 예제</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.17.1/matter.js"></script>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            border: 0;
+            gap: 0;
+            box-sizing: border-box;
+        }
+
+        #main {
+            position: relative;
+            display: flex;
+            flex-direction: row;
+            justify-content: baseline;
+            width: 100%;
+            height: 100vh;
+        }
+
+        #menu {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 10px 15px;
+            width: 300px;
+            height: 100vh;
+            background-color: #ffffff;
+            border: 2px solid #000;
+        }
+
+        #main h1 {
+            font-size: 34px;
+        }
+
+        #menu h2 {
+            font-size: 20px;
+        }
+
+        #menu>div>div {
+            display: flex;
+            flex-direction: column;
+            margin-top: 2rem;
+        }
+
+        #menu>div>div>div {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            gap: 10px;
+        }
+
+        #menu>div>div>div svg {
+            height: 40px;
+        }
+
+
+        #menu>div>div select {
+            border: 2px solid #000000;
+            border-radius: 5px;
+            height: 30px;
+        }
+
+        #menu>div>div button {
+            padding: 7px 0;
+            background-color: #4caf50;
+            border: 2px solid #ffffff;
+            color: #ffffff;
+            font-size: 14px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        #buttons {
+            margin-top: 50px;
+            height: 100%;
+        }
+
+        #bottom_buttons {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        #bottom_buttons svg {
+            width: 50px;
+            cursor: pointer;
+        }
+
+        #myCanvas {
+            position: absolute;
+            top: 0;
+            left: 300px;
+        }
+
         #angleInput {
             margin-top: 10px;
         }
 
-        #myModal {
+        .myModal {
             visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            /* visibility: hidden; */
             position: fixed;
+            width: 80%;
+            /*모달창 길이*/
+            max-width: 700px;
+            height: 400px;
+            border-radius: 15px;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             padding: 20px;
-            background-color: #fff;
+            background-color: #ffffff;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             z-index: 1;
         }
 
+        .myModal>div {
+            width: 100%;
+        }
+
+        .myModal>div>div {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        .myModal input {
+            width: 20%;
+            padding: 2px 6px;
+            border: 2px solid #000000;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .myModal p {
+            font-size: 13px;
+        }
+
         #myModalOverlay {
-            visibility: hidden;
             position: fixed;
+            visibility: hidden;
             top: 0;
-            left: 0;
+            left: auto;
+            right: auto;
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.5);
             z-index: 0;
         }
 
-        #myModal label {
-            display: block;
-            margin-bottom: 10px;
+        .myModal h1 {
+            font-size: 24px;
+            user-select: none;
         }
 
-        #myModal button {
+        .myModal h2 {
+            font-size: 18px;
+            font-weight: normal;
+            user-select: none;
+        }
+
+        .myModal button {
             padding: 10px;
             background-color: #4caf50;
             color: #fff;
             border: none;
             cursor: pointer;
+            max-width: 600px;
+            width: 100%;
         }
     </style>
 </head>
+
 <body>
-<canvas id="myCanvas" width="800" height="600"></canvas>
-<label for="forceInput">힘의 크기 조절:</label>
-<input type="range" id="forceInput" min="0" max="0.1" step="0.01" value="0.01">
-<label for="angleInput">힘의 방향 (각도):</label>
-<input type="number" id="angleInput" min="0" max="360" step="1" value="0">
-<button onclick="applyForce()">적용</button>
+    <div id="main">
+        <section id="menu">
+            <h1>메뉴</h1>
+            <div id="buttons">
+                <div>
+                    <div>
+                        <?xml version="1.0" ?><svg id="Layer_1" style="enable-background:new 0 0 512 512;" version="1.1"
+                            viewBox="0 0 512 512" xml:space="preserve" xmlns="http://www.w3.org/2000/svg"
+                            xmlns:xlink="http://www.w3.org/1999/xlink">
+                            <style type="text/css">
+                                .st0 {
+                                    fill: #231F20;
+                                }
+                            </style>
+                            <path class="st0"
+                                d="M381,236H276V131c0-11-9-20-20-20s-20,9-20,20v105H131c-11,0-20,9-20,20s9,20,20,20h105v105c0,11,9,20,20,20  s20-9,20-20V276h105c11,0,20-9,20-20S392,236,381,236z" />
+                        </svg>
+                        <h2>요소추가</h2>
+                        <select name="" id="objectType">
+                            <option value="r">사각형</option>
+                            <option value="c">원</option>
+                        </select>
+                    </div>
+                    <button onclick="addObject()">추가</button>
+                </div>
+                <div>
+                </div>
+                <div>
+                    <div>
+                        <h2>요소선택</h2>
+                        <select name="" id="objectSetting_ID">
+                        </select>
+                    </div>
+                    <div>
+                        <button style="background-color: #e62c1e; width: 50%;" onclick="">삭제</button>
+                        <button style="background-color: #979797; width: 50%;" onclick="objectSetting()">설정</button>
+                    </div>
+                    <button onclick="checkSelectedObject()" style="margin-top: 5px; width: 100%; height: 70px; background-color: #fff; color: #4caf50; border: 1px solid #4caf50;">선택된 요소 움직이기 ‣</button>
+                </div>
+            </div>
+            <div id="bottom_buttons">
+                <?xml version="1.0" ?><svg
+                    onclick="document.getElementById('windowModal').style.visibility = 'visible'; document.getElementById('myModalOverlay').style.visibility = 'visible';"
+                    data-name="Livello 1" id="Livello_1" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+                    <title />
+                    <path d="M64,39A25,25,0,1,0,89,64,25,25,0,0,0,64,39Zm0,44A19,19,0,1,1,83,64,19,19,0,0,1,64,83Z" />
+                    <path
+                        d="M121,48h-8.93a1,1,0,0,1-.94-.68,49.9,49.9,0,0,0-2-4.85,1,1,0,0,1,.18-1.15L115.62,35a7,7,0,0,0,0-9.9L102.89,12.38a7,7,0,0,0-9.9,0l-6.31,6.31a1,1,0,0,1-1.15.18,49.76,49.76,0,0,0-4.85-2,1,1,0,0,1-.68-.94V7a7,7,0,0,0-7-7H55a7,7,0,0,0-7,7v8.93a1,1,0,0,1-.68.94,49.9,49.9,0,0,0-4.85,2,1,1,0,0,1-1.15-.18L35,12.38a7,7,0,0,0-9.9,0L12.38,25.11a7,7,0,0,0,0,9.9l6.31,6.31a1,1,0,0,1,.18,1.15,49.76,49.76,0,0,0-2,4.85,1,1,0,0,1-.94.68H7a7,7,0,0,0-7,7V73a7,7,0,0,0,7,7h8.93a1,1,0,0,1,.94.68,49.9,49.9,0,0,0,2,4.85,1,1,0,0,1-.18,1.15L12.38,93a7,7,0,0,0,0,9.9l12.73,12.73a7,7,0,0,0,9.9,0l6.31-6.31a1,1,0,0,1,1.15-.18,49.76,49.76,0,0,0,4.85,2,1,1,0,0,1,.68.94V121a7,7,0,0,0,7,7H73a7,7,0,0,0,7-7v-8.93a1,1,0,0,1,.68-.94,49.9,49.9,0,0,0,4.85-2,1,1,0,0,1,1.15.18L93,115.62a7,7,0,0,0,9.9,0l12.73-12.73a7,7,0,0,0,0-9.9l-6.31-6.31a1,1,0,0,1-.18-1.15,49.76,49.76,0,0,0,2-4.85,1,1,0,0,1,.94-.68H121a7,7,0,0,0,7-7V55A7,7,0,0,0,121,48Zm1,25a1,1,0,0,1-1,1h-8.93a7,7,0,0,0-6.6,4.69,43.9,43.9,0,0,1-1.76,4.26,7,7,0,0,0,1.35,8l6.31,6.31a1,1,0,0,1,0,1.41L98.65,111.38a1,1,0,0,1-1.41,0l-6.31-6.31a7,7,0,0,0-8-1.35,43.88,43.88,0,0,1-4.27,1.76,7,7,0,0,0-4.68,6.6V121a1,1,0,0,1-1,1H55a1,1,0,0,1-1-1v-8.93a7,7,0,0,0-4.69-6.6,43.9,43.9,0,0,1-4.26-1.76,7,7,0,0,0-8,1.35l-6.31,6.31a1,1,0,0,1-1.41,0L16.62,98.65a1,1,0,0,1,0-1.41l6.31-6.31a7,7,0,0,0,1.35-8,43.88,43.88,0,0,1-1.76-4.27A7,7,0,0,0,15.93,74H7a1,1,0,0,1-1-1V55a1,1,0,0,1,1-1h8.93a7,7,0,0,0,6.6-4.69,43.9,43.9,0,0,1,1.76-4.26,7,7,0,0,0-1.35-8l-6.31-6.31a1,1,0,0,1,0-1.41L29.35,16.62a1,1,0,0,1,1.41,0l6.31,6.31a7,7,0,0,0,8,1.35,43.88,43.88,0,0,1,4.27-1.76A7,7,0,0,0,54,15.93V7a1,1,0,0,1,1-1H73a1,1,0,0,1,1,1v8.93a7,7,0,0,0,4.69,6.6,43.9,43.9,0,0,1,4.26,1.76,7,7,0,0,0,8-1.35l6.31-6.31a1,1,0,0,1,1.41,0l12.73,12.73a1,1,0,0,1,0,1.41l-6.31,6.31a7,7,0,0,0-1.35,8,43.88,43.88,0,0,1,1.76,4.27,7,7,0,0,0,6.6,4.68H121a1,1,0,0,1,1,1Z" />
+                </svg>
+            </div>
 
-<div id="myModal">
-    <label for="directionInput">진행 방향 (각도):</label>
-    <input type="number" id="directionInput" min="0" max="360" step="1" value="0">
-    <label for="forceInputModal">힘의 크기 조절:</label>
-    <input type="range" id="forceInputModal" min="0" max="0.1" step="0.01" value="0.01">
-    <label for="weightInput">무게:</label>
-    <input type="number" id="weightInput" min="1" max="100" step="1" value="10">
-    <button onclick="updateObjectProperties()">적용</button>
-</div>
+        </section>
+        <canvas id="myCanvas" width="100%" height="100%"></canvas>
+    </div>
 
-<div id="myModalOverlay"></div>
 
-<script>
-    // Matter.js 엔진을 초기화합니다.
-    const engine = Matter.Engine.create();
-    const world = engine.world;
+    <div id="myModalOverlay">
+    </div>
 
-    // 캔버스와 엔진을 연결합니다.
-    const canvas = document.getElementById('myCanvas');
-    const render = Matter.Render.create({
-        element: document.body,
-        canvas: canvas,
-        engine: engine,
-        options: {
-            width: 800,
-            height: 600,
+    <div class="myModal" id="myModal">
+        <div>
+            <h1>요소 설정</h1>
+            <h3 id="item_id"></h3>
+            <div>
+                <h2>진행 방향 (각도):</h2>
+                <input onchange="rangeReset()" type="number" id="directionInput" min="0" max="359" step="1" value="0">
+                <p>(0~359사이의 정수)</p>
+            </div>
+            <div>
+                <h2>힘의 크기 조절:</h2>
+                <input onchange="rangeReset()" type="range" id="forceInputModal" min="0" max="0.1" step="0.01"
+                    value="0.01">
+                <p>(0~0.1사이의 수)</p>
+            </div>
+            <div>
+                <h2>무게:</h2>
+                <input onchange="rangeReset()" type="number" id="weightInput" min="1" max="100" step="1" value="10">
+                <p>(1~100사이의 정수)</p>
+            </div>
+        </div>
+        <button onclick="updateObjectProperties()">설정 적용</button>
+    </div>
+
+    <div class="myModal" id="windowModal">
+        <div>
+            <h1>기본 설정</h1>
+            <div>
+                <h2>창 크기:</h2>
+                <input onchange="rangeReset()" type="number" id="width" min="100" step="1" value="800">
+                <h2> X </h2>
+                <input onchange="rangeReset()" type="number" id="height" min="100" step="1" value="600">
+                <p>(100이상의 정수)</p>
+            </div>
+        </div>
+        <button onclick="setWindow()">설정 적용</button>
+    </div>
+
+
+    <script>
+        let Modal = document.getElementById("myModal");
+        let directionInput = document.getElementById("directionInput");
+        let forceInputModal = document.getElementById("forceInputModal");
+        let weightInput = document.getElementById("weightInput");
+        let width = window.innerWidth - 300;
+        let height = window.innerHeight;
+        let ground;
+        let leftWall;
+        let rightWall
+
+        let items = [];
+
+
+        function rangeReset() {
+            let canvaswidth = document.getElementById("width");
+            let canvasHeight = document.getElementById("height");
+            directionInput.value = parseInt(directionInput.value) % 360;
+            if (parseInt(weightInput.value) > 100) weightInput.value = 100;
+            else if (parseInt(weightInput.value) < 1) weightInput.value = 1;
+
+            if (parseInt(canvaswidth.value) < 100) canvaswidth.value = 100;
+            if (parseInt(canvasHeight.value) < 100) canvasHeight.value = 100;
         }
-    });
 
-    // 바닥을 생성합니다.
-    const ground = Matter.Bodies.rectangle(400, 600, 800, 40, { isStatic: true });
 
-    // 왼쪽 벽을 생성합니다.
-    const leftWall = Matter.Bodies.rectangle(0, 300, 20, 600, { isStatic: true });
+        // 캔버스와 엔진을 연결합니다.
+        const canvas = document.getElementById('myCanvas');
+        // Matter.js 엔진을 초기화합니다.
+        const engine = Matter.Engine.create();
+        const world = engine.world;
+        let render = Matter.Render.create({
+            element: document.body,
+            canvas: canvas,
+            engine: engine,
+            options: {
+                width: width,
+                height: height,
+            }
+        });
+        // 바닥을 생성합니다.
+        ground = Matter.Bodies.rectangle(width / 2, height + 25, width, 100, { isStatic: true });
 
-    // 오른쪽 벽을 생성합니다.
-    const rightWall = Matter.Bodies.rectangle(800, 300, 20, 600, { isStatic: true });
+        // 왼쪽 벽을 생성합니다.
+        leftWall = Matter.Bodies.rectangle(-25, height / 2, 100, 10000, { isStatic: true });
 
-    // 물체를 생성합니다.
-    const circle = Matter.Bodies.circle(400, 200, 40);
+        // 오른쪽 벽을 생성합니다.
+        rightWall = Matter.Bodies.rectangle(width + 25, height / 2, 100, 10000, { isStatic: true });
 
-    // 마우스 제약 조건을 생성합니다.
-    const mouseConstraint = Matter.MouseConstraint.create(engine, {
-        mouse: Matter.Mouse.create(render.canvas),
-    });
+        // 물체를 생성합니다.
+        let circle = Matter.Bodies.circle(width / 2, height / 2, 40);
 
-    // 물체를 월드에 추가합니다.
-    Matter.World.add(world, [ground, leftWall, rightWall, circle, mouseConstraint]);
+        items.push(circle);
+        const startId = circle.id;
 
-    // 애니메이션 루프를 설정합니다.
-    Matter.Engine.run(engine);
-    Matter.Render.run(render);
+        // 마우스 제약 조건을 생성합니다.
+        let mouseConstraint = Matter.MouseConstraint.create(engine, {
+            mouse: Matter.Mouse.create(render.canvas),
+        });
 
-    // 물체의 속성을 수정할 때 사용할 변수
-    let selectedObject = null;
+        // 물체를 월드에 추가합니다.
+        Matter.World.add(world, [ground, leftWall, rightWall, circle, mouseConstraint]);
 
-    // 힘을 적용하는 함수를 정의합니다.
-    function applyForce() {
-        const forceMagnitude = parseFloat(document.getElementById('forceInput').value);
-        const angle = parseFloat(document.getElementById('angleInput').value);
-        const force = Matter.Vector.create(forceMagnitude * Math.cos(angle), forceMagnitude * Math.sin(angle));
-        Matter.Body.applyForce(circle, circle.position, force);
-    }
+        // 애니메이션 루프를 설정합니다.
+        Matter.Engine.run(engine);
+        Matter.Render.run(render);
 
-    // 'f' 키를 눌렀을 때 모달 창을 열도록 합니다.
-    document.addEventListener('keydown', function(event) {
-        if (event.key === 'f') {
-            selectedObject = circle;
-            updateModalInputs();
+        // 물체의 속성을 수정할 때 사용할 변수
+        let selectedObject = null;
+
+
+
+
+        //오브젝트를 추가하는 함수.
+        function addObject() {
+            let newObj;
+            if (document.getElementById("objectType").value == 'c') {
+                // 물체를 생성합니다.
+                newObj = Matter.Bodies.circle(width / 2, height / 2, 40);
+            }
+            else {
+                newObj = Matter.Bodies.rectangle(width / 2, height / 2, 40, 40, { isStatic: false });
+            }
+
+            Matter.World.add(world, newObj);
+            items.push(newObj);
+            let select_object_id = document.getElementById("objectSetting_ID");
+            let newOption = document.createElement('option');
+            newOption.innerHTML = "id: " + newObj.id;
+            newOption.value = newObj.id;
+            select_object_id.append(newOption);
+        }
+
+
+
+        // 오브젝트의 설정을 변경하는 함수
+        function objectSetting() {
+            let idOf_select_object = document.getElementById("objectSetting_ID").value;
+            selectedObject = items[idOf_select_object - startId];
             document.getElementById('myModal').style.visibility = 'visible';
             document.getElementById('myModalOverlay').style.visibility = 'visible';
+            document.getElementById('item_id').innerHTML = 'id: ' + idOf_select_object;
+            updateModalInputs();
+        };
+
+        function checkSelectedObject() {
+            let idOf_select_object = document.getElementById("objectSetting_ID").value;
+            selectedObject = items[idOf_select_object - startId];
+            applyForce();
         }
-    });
-
-    // 모달 창의 입력 필드를 업데이트합니다.
-    function updateModalInputs() {
-        const velocity = selectedObject.velocity || { x: 0, y: 0 };
-        document.getElementById('directionInput').value = Matter.Vector.angle(velocity);
-        document.getElementById('forceInputModal').value = Matter.Vector.magnitude(selectedObject.force) / selectedObject.mass;
-        document.getElementById('weightInput').value = selectedObject.mass;
-    }
 
 
-    // 모달 창에서 입력된 값을 기반으로 물체의 속성을 업데이트합니다.
-    function updateObjectProperties() {
-        const direction = parseFloat(document.getElementById('directionInput').value);
-        const forceMagnitude = parseFloat(document.getElementById('forceInputModal').value);
-        const weight = parseFloat(document.getElementById('weightInput').value);
 
-        // 물체의 속성을 업데이트합니다.
-        Matter.Body.setAngle(selectedObject, direction);
-        Matter.Body.setMass(selectedObject, weight);
 
-        // 새로운 힘 벡터를 계산하여 적용합니다.
-        const force = Matter.Vector.create(forceMagnitude * Math.cos(direction), forceMagnitude * Math.sin(direction));
-        Matter.Body.applyForce(selectedObject, selectedObject.position, force);
 
-        // 모달 창을 닫습니다.
-        document.getElementById('myModal').style.visibility = 'hidden';
-        document.getElementById('myModalOverlay').style.visibility = 'hidden';
-    }
-</script>
+
+        // 힘을 적용하는 함수를 정의합니다.
+        function applyForce() {
+            const forceMagnitude = parseFloat(document.getElementById('forceInputModal').value);
+            const angle = parseFloat(document.getElementById('directionInput').value);
+            // 각도를 라디안으로 변환합니다.
+            const angleInRadians = Matter.Common.degreesToRadians(angle);
+            const force = Matter.Vector.create(forceMagnitude * Math.cos(angleInRadians), forceMagnitude * Math.sin(angleInRadians));
+            Matter.Body.applyForce(selectedObject, selectedObject.position, force);
+            console.log("힘 적용 완료");
+        }
+
+
+        // 모달 창의 입력 필드를 업데이트합니다.
+        function updateModalInputs() {
+            const velocity = selectedObject.velocity || { x: 0, y: 0 };
+            document.getElementById('directionInput').value = Matter.Vector.angle(velocity);
+            document.getElementById('forceInputModal').value = Matter.Vector.magnitude(selectedObject.force) / selectedObject.mass;
+            document.getElementById('weightInput').value = selectedObject.mass;
+        }
+
+        // 모달 창에서 입력된 값을 기반으로 물체의 속성을 업데이트합니다.
+        function updateObjectProperties() {
+            const direction = parseFloat(document.getElementById('directionInput').value);
+            const forceMagnitude = parseFloat(document.getElementById('forceInputModal').value);
+            const weight = parseFloat(document.getElementById('weightInput').value);
+
+            if (selectedObject != null) {
+                // 물체의 속성을 업데이트합니다.
+                Matter.Body.setAngle(selectedObject, direction);
+                Matter.Body.setMass(selectedObject, weight);
+
+                // 새로운 힘 벡터를 계산하여 적용합니다.
+                const force = Matter.Vector.create(forceMagnitude * Math.cos(direction), forceMagnitude * Math.sin(direction));
+                Matter.Body.applyForce(selectedObject, selectedObject.position, force);
+            }
+
+            // 모달 창을 닫습니다.
+            document.getElementById('myModal').style.visibility = 'hidden';
+            document.getElementById('myModalOverlay').style.visibility = 'hidden';
+            console.log("업데이트 완료!");
+        }
+
+        function setWindow() {
+            width = parseInt(document.getElementById("width").value);
+            height = parseInt(document.getElementById("height").value);
+
+
+            render = Matter.Render.create({
+                element: document.body,
+                canvas: canvas,
+                options: {
+                    width: width,
+                    height: height,
+                }
+            });
+            Matter.World.remove(world, [ground, leftWall, rightWall]);
+            // 바닥을 생성합니다.
+            ground = Matter.Bodies.rectangle(width / 2, height + 25, width, 100, { isStatic: true });
+
+            // 왼쪽 벽을 생성합니다.
+            leftWall = Matter.Bodies.rectangle(-25, height / 2, 100, 10000, { isStatic: true });
+
+            // 오른쪽 벽을 생성합니다.
+            rightWall = Matter.Bodies.rectangle(width + 25, height / 2, 100, 10000, { isStatic: true });
+
+            Matter.World.add(world, [ground, leftWall, rightWall]);
+
+            // 모달 창을 닫습니다.
+            document.getElementById('windowModal').style.visibility = 'hidden';
+            document.getElementById('myModalOverlay').style.visibility = 'hidden';
+        }
+
+    </script>
+
+    <script>
+    </script>
 </body>
+
 </html>
