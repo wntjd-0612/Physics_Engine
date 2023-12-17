@@ -248,6 +248,10 @@
     <div class="myModal" id="myModal">
         <div>
             <h1>요소 설정</h1>
+
+
+
+
             <h3 id="item_id"></h3>
             <div>
                 <h2>진행 방향 (각도):</h2>
@@ -347,6 +351,23 @@
         // 물체를 월드에 추가합니다.
         Matter.World.add(world, [ground, leftWall, rightWall, circle, mouseConstraint]);
 
+        // 충돌 이벤트를 처리하기 위한 이벤트 리스너를 추가합니다.
+        Matter.Events.on(engine, 'collisionStart', function (event) {
+            // 충돌한 두 물체를 가져옵니다.
+            const pairs = event.pairs;
+
+            // 각 충돌 쌍에 대해 처리합니다.
+            for (let i = 0; i < pairs.length; i++) {
+                const pair = pairs[i];
+
+                // 물체가 벽에 충돌한 경우
+                if ((pair.bodyA === leftWall || pair.bodyA === rightWall) || (pair.bodyB === leftWall || pair.bodyB === rightWall)) {
+                    // 선택된 물체를 멈추도록 속도를 0으로 설정
+                    Matter.Body.setVelocity(selectedObject, { x: 0, y: 0 });
+                    Matter.Body.setPosition(selectedObject, selectedObject.position); // 현재 위치로 설정
+                }
+            }
+        });
         // 애니메이션 루프를 설정합니다.
         Matter.Engine.run(engine);
         Matter.Render.run(render);
@@ -387,56 +408,77 @@
             document.getElementById('myModalOverlay').style.visibility = 'visible';
             document.getElementById('item_id').innerHTML = 'id: ' + idOf_select_object;
             updateModalInputs();
-        };
+        };// 새로운 함수 추가: 선택한 요소를 계속해서 움직이도록 갱신
+        // 이동할 총 거리
+        const totalTranslation = 10;
 
-        function checkSelectedObject() {
-            let idOf_select_object = document.getElementById("objectSetting_ID").value;
-            selectedObject = items[idOf_select_object - startId];
-            applyForce();
+        // 선택된 요소를 계속해서 움직이기 위한 함수
+        function moveSelectedObject() {
+            // 1. selectedObject가 null 또는 undefined이면 함수 종료
+            if (!selectedObject) {
+                return;
+            }
+
+            // 2. 초반 각도에서 해당 방향으로 계속 이동하도록 힘을 적용
+            applyInitialForce();
+
+            // 3. 다음 프레임에서 다시 함수를 호출
+            requestAnimationFrame(moveSelectedObject);
         }
 
+        // 선택된 요소를 움직이기 버튼 클릭 시 호출되는 함수에 추가
+        function checkSelectedObject() {
+            let idOfSelectObject = document.getElementById("objectSetting_ID").value;
+            selectedObject = items.find(item => item.id == idOfSelectObject);
+            moveSelectedObject(); // 이 함수를 호출하여 선택된 요소를 계속해서 움직이도록 시작
+        }
 
-
-
-
-
-        // 힘을 적용하는 함수를 정의합니다.
-        // 힘을 적용하는 함수를 정의합니다.
+        // 선택된 요소의 힘을 적용하는 함수
         function applyForce() {
             const forceMagnitude = parseFloat(document.getElementById('forceInputModal').value);
             const angle = parseFloat(document.getElementById('directionInput').value);
-            // 각도를 라디안으로 변환합니다.
+            // 각도를 라디안으로 변환
             const angleInRadians = (angle * Math.PI) / 180;
             const force = Matter.Vector.create(forceMagnitude * Math.cos(angleInRadians), forceMagnitude * Math.sin(angleInRadians));
+            // 선택된 요소에 힘을 적용
             Matter.Body.applyForce(selectedObject, selectedObject.position, force);
-            console.log("힘 적용 완료");
         }
 
-        // 모달 창의 입력 필드를 업데이트합니다.
         function updateModalInputs() {
-            const velocity = selectedObject.velocity || { x: 0, y: 0 };
-            document.getElementById('directionInput').value = Matter.Vector.angle(velocity);
-            document.getElementById('forceInputModal').value = Matter.Vector.magnitude(selectedObject.force) / selectedObject.mass;
-            document.getElementById('weightInput').value = selectedObject.mass;
+            // 1. selectedObject가 null이면 함수 종료
+            if (selectedObject === null || selectedObject === undefined) {
+                return;
+            }
+
+            // 2. selectedObject.velocity가 정의되어 있는지 확인
+            if (selectedObject.velocity !== undefined && selectedObject.velocity !== null) {
+                const velocity = selectedObject.velocity;
+                document.getElementById('directionInput').value = Matter.Vector.angle(velocity);
+                document.getElementById('forceInputModal').value = Matter.Vector.magnitude(selectedObject.force) / selectedObject.mass;
+                document.getElementById('weightInput').value = selectedObject.mass;
+            } else {
+                // selectedObject.velocity가 정의되어 있지 않을 경우에 대한 처리
+                // 예: 기본값 사용 또는 다른 조치
+            }
         }
 
-        // 모달 창에서 입력된 값을 기반으로 물체의 속성을 업데이트합니다.
+
+        // 모달 창에서 입력된 값을 기반으로 물체의 속성을 업데이트하는 함수
         function updateObjectProperties() {
             const direction = parseFloat(document.getElementById('directionInput').value);
             const forceMagnitude = parseFloat(document.getElementById('forceInputModal').value);
             const weight = parseFloat(document.getElementById('weightInput').value);
 
             if (selectedObject != null) {
-                // 물체의 속성을 업데이트합니다.
+                // 물체의 속성을 업데이트
                 Matter.Body.setAngle(selectedObject, direction);
                 Matter.Body.setMass(selectedObject, weight);
 
-                // 새로운 힘 벡터를 계산하여 적용합니다.
-                const force = Matter.Vector.create(forceMagnitude * Math.cos(direction), forceMagnitude * Math.sin(direction));
-                Matter.Body.applyForce(selectedObject, selectedObject.position, force);
+                // 새로운 힘 벡터를 계산하여 적용
+                applyForce();
             }
 
-            // 모달 창을 닫습니다.
+            // 모달 창을 닫음
             document.getElementById('myModal').style.visibility = 'hidden';
             document.getElementById('myModalOverlay').style.visibility = 'hidden';
             console.log("업데이트 완료!");
@@ -471,23 +513,32 @@
             document.getElementById('windowModal').style.visibility = 'hidden';
             document.getElementById('myModalOverlay').style.visibility = 'hidden';
         } function deleteObject() {
-            if (selectedObject != null) {
-                // 선택된 요소를 배열에서 제거합니다.
-                const index = items.indexOf(selectedObject);
-                if (index !== -1) {
-                    items.splice(index, 1);
-                }
+            // 선택된 요소의 ID를 가져옵니다.
+            let selectedObjectId = document.getElementById("objectSetting_ID").value;
 
+            // 선택된 요소의 DOM 요소를 찾습니다.
+            let selectedObject = items.find(item => item.id == selectedObjectId);
+
+            if (selectedObject) {
                 // 선택된 요소를 월드에서 제거합니다.
-                Matter.World.remove(world, selectedObject);
+                Matter.Composite.remove(world, selectedObject);
+
+                // 선택된 요소를 배열에서 제거합니다.
+                items = items.filter(item => item.id != selectedObjectId);
 
                 // 선택된 요소를 해제합니다.
                 selectedObject = null;
 
                 // 선택된 요소 목록을 갱신합니다.
                 updateObjectList();
+
+                console.log("Object deleted successfully");
+            } else {
+                console.log("No selected object to delete");
             }
         }
+
+
 
         // 선택된 요소 목록을 갱신하는 함수
         function updateObjectList() {
@@ -503,10 +554,32 @@
                 select_object_id.append(newOption);
             });
         }
+        // 모달 창에서 입력된 값을 기반으로 물체의 초반 힘을 업데이트하는 함수
+        function updateInitialForce() {
+            const initialForceMagnitude = parseFloat(document.getElementById('forceInputModal').value);
+            const initialAngle = parseFloat(document.getElementById('directionInput').value);
+            const initialAngleInRadians = (initialAngle * Math.PI) / 180;
+            const initialForce = Matter.Vector.create(
+                initialForceMagnitude * Math.cos(initialAngleInRadians),
+                initialForceMagnitude * Math.sin(initialAngleInRadians)
+            );
 
-    </script>
+            // 물체에 초반 힘을 적용
+            Matter.Body.applyForce(selectedObject, selectedObject.position, initialForce);
+        }
+        // 선택된 요소를 초기 각도에서 계속 이동하도록 힘을 적용하는 함수
+        function applyInitialForce() {
+            const initialForceMagnitude = parseFloat(document.getElementById('forceInputModal').value);
+            const initialAngle = parseFloat(document.getElementById('directionInput').value);
+            const initialAngleInRadians = (initialAngle * Math.PI) / 180;
+            const initialForce = Matter.Vector.create(
+                initialForceMagnitude * Math.cos(initialAngleInRadians),
+                initialForceMagnitude * Math.sin(initialAngleInRadians)
+            );
 
-    <script>
+            // 초반 각도 방향으로 힘을 적용
+            Matter.Body.applyForce(selectedObject, selectedObject.position, initialForce);
+        }
     </script>
 </body>
 
