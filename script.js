@@ -47,9 +47,8 @@ leftWall = Matter.Bodies.rectangle(-25, height / 2, 100, 10000, { isStatic: true
 rightWall = Matter.Bodies.rectangle(width + 25, height / 2, 100, 10000, { isStatic: true });
 
 // 물체를 생성합니다.
-let circle = Matter.Bodies.circle(width / 2, height / 2, 40);
+let circle = addObject(true);
 
-items.push(circle);
 const startId = circle.id;
 
 // 마우스 제약 조건을 생성합니다.
@@ -92,9 +91,9 @@ Matter.Render.run(render);
 let selectedObject = null;
 
 //오브젝트를 추가하는 함수.
-function addObject() {
+function addObject(OBJTYPE=false) {
     let newObj;
-    if (document.getElementById("objectType").value == 'c') {
+    if (document.getElementById("objectType").value == 'c' || OBJTYPE != false) {
         // 물체를 생성합니다.
         newObj = Matter.Bodies.circle(width / 2, height / 2, 40);
     }
@@ -109,6 +108,7 @@ function addObject() {
     newOption.innerHTML = "id: " + newObj.id;
     newOption.value = newObj.id;
     select_object_id.append(newOption);
+    return newObj;
 }
 
 
@@ -464,34 +464,49 @@ function displayVelocityOfSelectedObject() {
     var selectedObject = getSelectedObject();
 
     if (selectedObject) {
-        var velocity = selectedObject.velocity;
-
         // 현재 물체의 속도를 물체 위에 텍스트로 표시
-        showVelocityOnObject(selectedObject, '물체 속도: ' + velocity.x.toFixed(2));
+        showVelocityOnObject(selectedObject);
     } else {
         alert('물체를 선택하세요.');
     }
 }
 
-function showVelocityOnObject(object, text) {
-    // 물체의 위치 가져오기
-    var position = object.position;
+function showVelocityOnObject(object) {
+    // 텍스트 엘리먼트를 만들거나 가져오기
+    var textElement = document.querySelector('.velocity-display');
+    if (!textElement) {
+        textElement = document.createElement('div');
+        textElement.className = 'velocity-display'; // 클래스 추가
+        textElement.style.position = 'absolute';
+        document.body.appendChild(textElement);
+    }
 
-    // 텍스트 엘리먼트 생성
-    var textElement = document.createElement('div');
-    textElement.className = 'velocity-display'; // 클래스 추가
-    textElement.innerHTML = text;
-    textElement.style.position = 'absolute';
+    // 매번 물체의 위치 및 속도 가져오기
+    var position = object.position;
+    var velocity = object.velocity;
+
+    // 텍스트 엘리먼트 위치 및 내용 업데이트
+    textElement.innerHTML = '물체 속도: ' + velocity.x.toFixed(2);
     textElement.style.left = position.x + 'px';
     textElement.style.top = position.y - 20 + 'px'; // 물체 위에 표시하도록 조절
 
-    // 텍스트 엘리먼트를 바디에 추가
-    document.body.appendChild(textElement);
+    // 속도 표시 갱신 (애니메이션 프레임에 따라)
+    requestAnimationFrame(function () {
+        if (velocityDisplayActive) {
+            showVelocityOnObject(object);
+        } else {
+            textElement.remove();
+        }
+    });
+}
 
-    // 몇 초 후에 텍스트 엘리먼트 제거 (예: 2초 후)
-    setTimeout(function () {
-        textElement.remove();
-    }, 2000);
+// 다음 함수는 수정된 코드에 추가된 부분입니다.
+function getSelectedObject() {
+    // 현재는 Matter.js에서 제공하는 함수가 없으므로 적절한 방법으로 선택된 물체를 가져와야 합니다.
+    // 예를 들어, 사용자가 선택한 물체를 전역 변수 등에 저장하고 반환하는 방법을 사용할 수 있습니다.
+    // 이 함수는 그에 맞게 수정해야 합니다.
+    // 아래는 임시로 추가된 코드입니다.
+    return selectedObject; // 여기에 선택된 물체를 반환하는 코드를 추가하세요.
 }
 
 document.getElementById('toggleVelocityDisplayButton').addEventListener('click', toggleVelocityDisplay);
