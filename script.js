@@ -7,6 +7,7 @@ let height = window.innerHeight;
 let ground;
 let leftWall;
 let rightWall
+let positionHistory = [];
 
 let items = [];
 
@@ -86,7 +87,7 @@ Matter.Events.on(engine, 'collisionStart', function (event) {
 // 애니메이션 루프를 설정합니다.
 Matter.Engine.run(engine);
 Matter.Render.run(render);
-
+engine.world.gravity.y = 0.3;
 // 물체의 속성을 수정할 때 사용할 변수
 let selectedObject = null;
 
@@ -121,7 +122,7 @@ function objectSetting() {
     document.getElementById('myModalOverlay').style.visibility = 'visible';
     document.getElementById('item_id').innerHTML = 'id: ' + idOf_select_object;
     updateModalInputs();
-};// 새로운 함수 추가: 선택한 요소를 계속해서 움직이도록 갱신
+}// 새로운 함수 추가: 선택한 요소를 계속해서 움직이도록 갱신
 // 이동할 총 거리
 const totalTranslation = 10;
 
@@ -243,7 +244,7 @@ function setWindow() {
 } function deleteObject() {
     // 선택된 요소의 ID를 가져옵니다.
     let selectedObjectId = document.getElementById("objectSetting_ID").value;
-
+    getSelectedObject(selectedObjectId);
     // 선택된 요소의 DOM 요소를 찾습니다.
     let selectedObject = items.find(item => item.id == selectedObjectId);
 
@@ -440,9 +441,14 @@ function resumeSimulation() {
 }
 var velocityDisplayActive = false;
 
+// 다음 함수는 수정된 코드에 추가된 부분입니다.
+function getSelectedObject() {
+    return selectedObject; // 여기에 선택된 물체를 반환하는 코드를 추가하세요.
+}
+// 수정된 코드: 물체 속도 표시 부분
 function toggleVelocityDisplay() {
     velocityDisplayActive = !velocityDisplayActive;
-
+    resetPositionHistory()
     if (velocityDisplayActive) {
         document.getElementById('toggleVelocityDisplayButton').innerText = '물체 속도 표시 중지';
         displayVelocityOfSelectedObject();
@@ -450,14 +456,6 @@ function toggleVelocityDisplay() {
         document.getElementById('toggleVelocityDisplayButton').innerText = '물체 속도 표시 시작';
         hideVelocityDisplay();
     }
-}
-
-function hideVelocityDisplay() {
-    // 모든 속도 표시 텍스트 엘리먼트 제거
-    var velocityElements = document.querySelectorAll('.velocity-display');
-    velocityElements.forEach(function (element) {
-        element.remove();
-    });
 }
 
 function displayVelocityOfSelectedObject() {
@@ -468,9 +466,11 @@ function displayVelocityOfSelectedObject() {
         showVelocityOnObject(selectedObject);
     } else {
         alert('물체를 선택하세요.');
+        document.getElementById('toggleVelocityDisplayButton').innerText = '물체 속도 표시 시작';
     }
 }
 
+// 다음 함수는 수정된 코드에 추가된 부분입니다.
 function showVelocityOnObject(object) {
     // 텍스트 엘리먼트를 만들거나 가져오기
     var textElement = document.querySelector('.velocity-display');
@@ -484,11 +484,12 @@ function showVelocityOnObject(object) {
     // 매번 물체의 위치 및 속도 가져오기
     var position = object.position;
     var velocity = object.velocity;
+    document.getElementById("speed").innerHTML=Math.round(Math.sqrt((velocity.x.toFixed(2))*(velocity.x.toFixed(2))+(velocity.y.toFixed(2))*(velocity.y.toFixed(2)))*10)/10
+    // 현재 위치를 위치 이력에 추가합니다
+    positionHistory.push({ x: position.x, y: position.y });
 
-    // 텍스트 엘리먼트 위치 및 내용 업데이트
-    textElement.innerHTML = '물체 속도: ' + velocity.x.toFixed(2);
-    textElement.style.left = position.x + 'px';
-    textElement.style.top = position.y - 20 + 'px'; // 물체 위에 표시하도록 조절
+    // 차트를 위치 이력으로 업데이트합니다
+    updateChart();
 
     // 속도 표시 갱신 (애니메이션 프레임에 따라)
     requestAnimationFrame(function () {
@@ -500,13 +501,38 @@ function showVelocityOnObject(object) {
     });
 }
 
-// 다음 함수는 수정된 코드에 추가된 부분입니다.
-function getSelectedObject() {
-    // 현재는 Matter.js에서 제공하는 함수가 없으므로 적절한 방법으로 선택된 물체를 가져와야 합니다.
-    // 예를 들어, 사용자가 선택한 물체를 전역 변수 등에 저장하고 반환하는 방법을 사용할 수 있습니다.
-    // 이 함수는 그에 맞게 수정해야 합니다.
-    // 아래는 임시로 추가된 코드입니다.
-    return selectedObject; // 여기에 선택된 물체를 반환하는 코드를 추가하세요.
-}
+// 이벤트 핸들러 추가: 물체를 선택할 때 속도 표시 갱신
+document.getElementById('objectSetting_ID').addEventListener('change', function () {
+    if (velocityDisplayActive) {
+        displayVelocityOfSelectedObject();
+    }
+});
+
 
 document.getElementById('toggleVelocityDisplayButton').addEventListener('click', toggleVelocityDisplay);
+
+// 차트를 업데이트하는 새로운 함수를 추가하세요
+function updateChart() {
+    const canvas = document.getElementById('velocityChart');
+    const ctx = canvas.getContext('2d');
+
+    // 캔버스를 지웁니다
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 차트에 위치 이력을 플로팅합니다
+    if (positionHistory.length > 0) {
+        ctx.beginPath();
+        ctx.moveTo(positionHistory[0].x, positionHistory[0].y);
+        for (const position of positionHistory) {
+            ctx.lineTo(position.x, position.y);
+        }
+        ctx.stroke();
+    }
+}
+
+
+// 시뮬레이션이 시작되거나 차트를 재설정하려면 이 함수를 호출하세요
+function resetPositionHistory() {
+    positionHistory = [];
+    updateChart();
+}

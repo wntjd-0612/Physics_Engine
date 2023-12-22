@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Matter.js 물리 시뮬레이션 예제</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.17.1/matter.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">    
 </head>
 <body>
@@ -63,7 +64,7 @@
                 </svg>
                 <!-- 일시정지 버튼 -->
                 <button onclick="togglePauseResume(event)">Pause/Resume</button>
-                <button id="toggleVelocityDisplayButton">물체 속도 표시 토글</button>
+                <button id="toggleVelocityDisplayButton">물체 속도 표시 시작</button>
 
             </div>
 
@@ -116,7 +117,7 @@
         </div>
         <button onclick="setWindow()">설정 적용</button>
     </div>
-
+    <canvas id="velocityChart" width="400" height="200"></canvas>
 
     <script src="script.js"></script>        
 </body>
