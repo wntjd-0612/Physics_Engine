@@ -536,3 +536,26 @@ function resetPositionHistory() {
     positionHistory = [];
     updateChart();
 }
+
+function exportChartImage() {
+    const canvas = document.getElementById('velocityChart');
+    const link = document.createElement('a');
+
+    // 캔버스 내용을 데이터 URL로 변환합니다
+    const dataUrl = canvas.toDataURL();
+
+    // 링크의 href 속성을 데이터 URL로 설정합니다
+    link.href = dataUrl;
+
+    // 링크의 download 속성을 사용하여 파일 이름을 지정합니다
+    link.download = 'chart.png';
+
+    // 링크를 문서에 추가합니다
+    document.body.appendChild(link);
+
+    // 다운로드를 시작하기 위해 링크를 클릭합니다
+    link.click();
+
+    // 링크를 문서에서 제거합니다
+    document.body.removeChild(link);
+}

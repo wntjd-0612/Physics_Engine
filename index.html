@@ -65,7 +65,7 @@
                 <!-- 일시정지 버튼 -->
                 <button onclick="togglePauseResume(event)">Pause/Resume</button>
                 <button id="toggleVelocityDisplayButton">물체 속도 표시 시작</button>
-
+                <button onclick="exportChartImage();">그래프 추출</button>
             </div>
 
         </section>
@@ -117,7 +117,7 @@
         </div>
         <button onclick="setWindow()">설정 적용</button>
     </div>
-    <canvas id="velocityChart" width="400" height="200"></canvas>
+    <canvas id="velocityChart" width="4000" height="2000"></canvas>
 
     <script src="script.js"></script>        
 </body>
